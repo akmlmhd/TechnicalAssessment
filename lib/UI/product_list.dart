@@ -40,7 +40,7 @@ class _ProductListState extends State<ProductList> {
   }
 
   Future<void> _loadProducts() async {
-    if (_isLoading || !_hasMore) return;
+    if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
@@ -61,8 +61,8 @@ class _ProductListState extends State<ProductList> {
     } catch (e) {
       debugPrint('Error: $e');
       setState(() {
-      _hasError = true;
-    });
+        _hasError = true;
+      });
     } finally {
       setState(() {
         _isLoading = false;
@@ -81,48 +81,68 @@ class _ProductListState extends State<ProductList> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(title: const Text('Product List')),
-      body: ListView.builder(
-        controller: _scrollController,
-        itemCount: _products.length + (_hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          // Loading indicator
-          if (index == _products.length) {
-            return const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
+      body: (_hasError && _products.isEmpty)
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Unable to load products',
+                    style: TextStyle(fontSize: 16),
+                  ),
 
-          final product = _products[index];
+                  const SizedBox(height: 10),
 
-          return ListTile(
-            contentPadding: const EdgeInsets.all(12),
-            leading: Image.network(
-              product['thumbnail'],
-              width: 70,
-              height: 70,
-              fit: BoxFit.cover,
+                  ElevatedButton(
+                    onPressed: _loadProducts,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              controller: _scrollController,
+              itemCount: _products.length + (_hasMore ? 1 : 0),
+              itemBuilder: (context, index) {
+                // Loading indicator
+                if (index == _products.length) {
+                  return const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final product = _products[index];
+
+                return ListTile(
+                  contentPadding: const EdgeInsets.all(12),
+                  leading: Image.network(
+                    product['thumbnail'],
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  ),
+                  title: Text(
+                    product['title'],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '\$${product['price']}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ProductDetail(productId: product['id']),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-            title: Text(
-              product['title'],
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              '\$${product['price']}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProductDetail(productId: product['id']),
-                ),
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }

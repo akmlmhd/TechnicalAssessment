@@ -4,10 +4,7 @@ import 'package:product_app/API/api.dart';
 class ProductDetail extends StatefulWidget {
   final int productId;
 
-  const ProductDetail({
-    super.key,
-    required this.productId,
-  });
+  const ProductDetail({super.key, required this.productId});
 
   @override
   State<ProductDetail> createState() => _ProductDetailState();
@@ -43,18 +40,12 @@ class _ProductDetailState extends State<ProductDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Product Detail'),
-      ),
+      appBar: AppBar(title: const Text('Product Detail')),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : _product == null
-              ? const Center(
-                  child: Text('Failed to load product'),
-                )
-              : _buildProductDetail(),
+          ? const Center(child: Text('Failed to load product'))
+          : _buildProductDetail(),
     );
   }
 
@@ -67,7 +58,6 @@ class _ProductDetailState extends State<ProductDetail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product Images
           SizedBox(
             height: 300,
             child: PageView.builder(
@@ -77,10 +67,7 @@ class _ProductDetailState extends State<ProductDetail> {
                   images[index],
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.image_not_supported,
-                      size: 80,
-                    );
+                    return const Icon(Icons.image_not_supported, size: 80);
                   },
                 );
               },
@@ -92,7 +79,6 @@ class _ProductDetailState extends State<ProductDetail> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title
                 Text(
                   product['title'] ?? '',
                   style: const TextStyle(
@@ -103,7 +89,6 @@ class _ProductDetailState extends State<ProductDetail> {
 
                 const SizedBox(height: 12),
 
-                // Price
                 Text(
                   '\$${product['price']}',
                   style: const TextStyle(
@@ -114,42 +99,29 @@ class _ProductDetailState extends State<ProductDetail> {
 
                 const SizedBox(height: 12),
 
-                // Rating
                 Row(
                   children: [
-                    const Icon(
-                      Icons.star,
-                      color: Colors.amber,
-                    ),
+                    const Icon(Icons.star, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text(
                       '${product['rating']}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
 
                 const SizedBox(height: 20),
 
-                // Description
                 const Text(
                   'Description',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
 
                 Text(
                   product['description'] ?? '',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.5,
-                  ),
+                  style: const TextStyle(fontSize: 16, height: 1.5),
                 ),
               ],
             ),
