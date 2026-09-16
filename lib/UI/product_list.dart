@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:product_app/API/api.dart';
+import 'package:product_app/UI/product_detail.dart';
 
 class ProductList extends StatefulWidget {
   const ProductList({super.key});
@@ -18,6 +19,7 @@ class _ProductListState extends State<ProductList> {
   int _skip = 0;
   bool _isLoading = false;
   bool _hasMore = true;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -42,14 +44,11 @@ class _ProductListState extends State<ProductList> {
 
     setState(() {
       _isLoading = true;
+      _hasError = false;
     });
 
     try {
-      final newProducts = await getProducts(
-        limit: _limit,
-        skip: _skip,
-      );
-
+      final newProducts = await getProducts(limit: _limit, skip: _skip);
       setState(() {
         _products.addAll(newProducts);
 
@@ -61,6 +60,9 @@ class _ProductListState extends State<ProductList> {
       });
     } catch (e) {
       debugPrint('Error: $e');
+      setState(() {
+      _hasError = true;
+    });
     } finally {
       setState(() {
         _isLoading = false;
@@ -78,9 +80,7 @@ class _ProductListState extends State<ProductList> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Product List'),
-      ),
+      appBar: AppBar(title: const Text('Product List')),
       body: ListView.builder(
         controller: _scrollController,
         itemCount: _products.length + (_hasMore ? 1 : 0),
@@ -89,9 +89,7 @@ class _ProductListState extends State<ProductList> {
           if (index == _products.length) {
             return const Padding(
               padding: EdgeInsets.all(20),
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: Center(child: CircularProgressIndicator()),
             );
           }
 
@@ -112,10 +110,16 @@ class _ProductListState extends State<ProductList> {
             ),
             subtitle: Text(
               '\$${product['price']}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProductDetail(productId: product['id']),
+                ),
+              );
+            },
           );
         },
       ),
