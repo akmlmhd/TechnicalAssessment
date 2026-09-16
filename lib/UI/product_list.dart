@@ -12,6 +12,9 @@ class _ProductListState extends State<ProductList> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Product List'),
+      ),
     );
   }
 }
