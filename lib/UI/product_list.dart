@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:product_app/API/api.dart';
 import 'package:product_app/UI/product_detail.dart';
@@ -12,7 +14,7 @@ class ProductList extends StatefulWidget {
 class _ProductListState extends State<ProductList> {
   final ScrollController _scrollController = ScrollController();
 
-  final List<dynamic> _products = [];
+  List<dynamic> _products = [];
 
   static const int _limit = 20;
 
@@ -20,6 +22,8 @@ class _ProductListState extends State<ProductList> {
   bool _isLoading = false;
   bool _hasMore = true;
   bool _hasError = false;
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -37,6 +41,20 @@ class _ProductListState extends State<ProductList> {
         _hasMore) {
       _loadProducts();
     }
+  }
+
+  void _onSearchChanged(String value) {
+    if (_debounce?.isActive ?? false) {
+      _debounce!.cancel();
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (value.trim().isEmpty) {
+        _resetProducts();
+      } else {
+        _searchProducts(value.trim());
+      }
+    });
   }
 
   Future<void> _loadProducts() async {
@@ -70,6 +88,48 @@ class _ProductListState extends State<ProductList> {
     }
   }
 
+  Future<void> _searchProducts(String keyword) async {
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
+
+    try {
+      final results = await searchProducts(keyword);
+
+      setState(() {
+        _products = results;
+        _hasMore = false;
+      });
+    } catch (e) {
+      setState(() {
+        _hasError = true;
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _resetProducts() async {
+    setState(() {
+      _products.clear();
+      _skip = 0;
+      _hasMore = true;
+    });
+
+    await _loadProducts();
+  }
+
+  Future<void> _refreshProducts() async {
+    if (_searchController.text.trim().isNotEmpty) {
+      await _searchProducts(_searchController.text.trim());
+      return;
+    }
+    await _resetProducts();
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -100,48 +160,86 @@ class _ProductListState extends State<ProductList> {
                 ],
               ),
             )
-          : ListView.builder(
-              controller: _scrollController,
-              itemCount: _products.length + (_hasMore ? 1 : 0),
-              itemBuilder: (context, index) {
-                // Loading indicator
-                if (index == _products.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Search products...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                _resetProducts();
+                                _loadProducts();
+                                setState(() {});
+                              },
+                            )
+                          : null,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _refreshProducts,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: _products.length,
+                      itemBuilder: (context, index) {
+                        final product = _products[index];
 
-                final product = _products[index];
+                        return ListTile(
+                          leading: Image.network(
+                            product['thumbnail'],
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) {
+                                return child;
+                              }
 
-                return ListTile(
-                  contentPadding: const EdgeInsets.all(12),
-                  leading: Image.network(
-                    product['thumbnail'],
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
+                              return Container(
+                                color: Colors.grey.shade200,
+                                child: const Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            },
+
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.grey,
+                                ),
+                              );
+                            },
+                          ),
+                          title: Text(product['title']),
+                          subtitle: Text('\$${product['price']}'),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ProductDetail(productId: product['id']),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
-                  title: Text(
-                    product['title'],
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    '\$${product['price']}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ProductDetail(productId: product['id']),
-                      ),
-                    );
-                  },
-                );
-              },
+                ),
+              ],
             ),
     );
   }

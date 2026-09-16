@@ -66,8 +66,25 @@ class _ProductDetailState extends State<ProductDetail> {
                 return Image.network(
                   images[index],
                   fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) {
+                      return child;
+                    }
+
+                    return Container(
+                      color: Colors.grey.shade200,
+                      child: const Center(child: CircularProgressIndicator()),
+                    );
+                  },
+
                   errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.image_not_supported, size: 80);
+                    return Container(
+                      color: Colors.grey.shade200,
+                      child: const Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey,
+                      ),
+                    );
                   },
                 );
               },

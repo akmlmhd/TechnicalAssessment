@@ -32,3 +32,21 @@ Future<Map<String, dynamic>> getProductDetail(int productId) async {
 
   throw Exception('Failed to load product detail');
 }
+
+Future<List<dynamic>> searchProducts(String keyword) async {
+  final url = Uri.parse('https://dummyjson.com/products/search')
+      .replace(queryParameters: {'q': keyword});
+
+  try {
+    final response = await http.get(url).timeout(const Duration(seconds: 5));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['products'];
+    }
+
+    throw Exception('Failed to search products');
+  } catch (e) {
+    throw Exception('Search failed');
+  }
+}
